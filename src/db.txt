@@ -1,0 +1,3 @@
+code rust	true
+find motivation	true
+try learn	true
