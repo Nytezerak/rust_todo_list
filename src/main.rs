@@ -1,7 +1,10 @@
 //Let hashmap usable without having to call all the path everytime
 use std::collections::HashMap;
+
+/* No more in use since serde is used
 use std::io::Read;
 use std::str::FromStr;
+*/
 
 fn main() {
     //env returns the arguments that the program is started with
@@ -18,6 +21,14 @@ fn main() {
             Ok(_) => println!("todo saved!"),
             Err(why) => println!("An error ocurred: {}", why),
         }
+    } else if action == "complete" {
+        match todo.complete(&item) {
+            None => println!("'{}' is not present in the list", item),
+            Some(_) => match todo.save() {
+                Ok(_) => println!("Todo saved!"),
+                Err(why) => println!("An error occurred: {}", why),
+            },
+        }
     }
 }
 
@@ -29,12 +40,50 @@ struct Todo{
 impl Todo {
     //the follow block is not a method once it doesn't starts with "self"
     fn new() -> Result<Todo, std::io::Error>{
-        let mut f = std::fs::OpenOptions::new()
+        let f = std::fs::OpenOptions::new()
         .write(true)
         .create(true)
         .read(true)
-        .open("db.txt")?;
+        //.open("db.txt")?;
+        .open("db.json")?;
     
+        //serializing Json as Hashmap
+        match serde_json::from_reader(f){
+            //mut f isn't needed to allocate the content on a string anymore once serde does the work
+            Ok(map) => Ok(Todo {map}),
+            Err(e) if e.is_eof() => Ok(Todo {
+                map: HashMap::new(),
+            }),
+            Err(e) => panic!("An error occurred: {}", e),
+        }
+    }
+        //fn is for function
+        //"mut" turns variables mutables
+        fn insert (&mut self, key: String){
+            //insert a new item in our map
+            //value defined to be true
+            self.map.insert(key,true);
+        }   
+
+        fn save(self) -> Result<(), Box<dyn std::error::Error>> {
+            //open db.json
+            let f = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open("db.json")?;
+            //write to file with serde
+            serde_json::to_writer_pretty(f, &self.map)?;
+            Ok(())
+        }   
+
+        fn complete(&mut self, key: &String) -> Option<()> {
+            match self.map.get_mut(key) {
+                Some(v) => Some(*v = false),
+                None => None,
+            }
+        }
+    /* below is the code that matches "db.txt"
     let mut content = String::new();
     //reads all the bytes in the file and appends them into the <content> string
     f.read_to_string(&mut content)?;
@@ -51,15 +100,6 @@ impl Todo {
         .collect();
     //if there is no errors return struct with "OK"
     Ok(Todo {map})
-    }
-
-    //fn is for function
-    //"mut" turns variables mutables
-    fn insert (&mut self, key: String){
-        //insert a new item in our map
-        //value defined to be true
-        self.map.insert(key,true);
-    }
 
     //"->" annotates returned type from the function, here it returns a result
     fn save(self) -> Result<(), std::io::Error> {
@@ -72,7 +112,7 @@ impl Todo {
         }
         //saves content on "db.text"
         std::fs::write("db.txt", content)
-    }
+    }*/
 }
 
     
