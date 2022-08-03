@@ -1,3 +1,4 @@
-code rust	true
-find motivation	true
-try learn	true
+Olá Mundo!	true
+Treinar Rust	true
+Fazer Exercício	true
+Treinar Programação	true
